@@ -10,8 +10,8 @@ interface Background {
     fun reset()
 
     companion object {
-        const val COLOR_TIMEOUT = 5_000L
-        const val TIME_TIMEOUT = 500L
+        const val COLOR_TIMEOUT = 20_000L
+        const val TIME_TIMEOUT = 100L
         const val TIME_SLEEP_PAUSE = 100L
         val colors = listOf(
             Color.WHITE,

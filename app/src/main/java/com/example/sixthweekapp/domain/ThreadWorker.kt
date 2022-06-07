@@ -8,6 +8,7 @@ import com.example.sixthweekapp.Background.Companion.TIME_SLEEP_PAUSE
 import com.example.sixthweekapp.Background.Companion.TIME_TIMEOUT
 import com.example.sixthweekapp.Background.Companion.colors
 import com.example.sixthweekapp.Callbacks
+import com.example.sixthweekappcoroutines.domain.GenerationPI
 import java.util.*
 
 class ThreadWorker(private val uiCallback: Callbacks) : Background {
@@ -16,11 +17,34 @@ class ThreadWorker(private val uiCallback: Callbacks) : Background {
     private val random = Random(System.currentTimeMillis())
     private val colorThread: Thread
     private val timeThread: Thread
+    private val piThread: Thread
 
+    @Volatile
     private var sleepTime = 0L
+
+    @Volatile
     private var timeMillis = 0L
 
+    @Volatile
+    private var n = 1
+
     init {
+        piThread = Thread {
+            try {
+                while (true) {
+                    while (isPaused) {
+                        Thread.sleep(TIME_SLEEP_PAUSE)
+                    }
+                    val piNumber = GenerationPI.formula(n)
+                    val piString = "%.${2 * n}f".format(piNumber)
+                    val pi = piString.subSequence(0, n + 2)
+                    uiCallback.onPiChanged(pi)
+                    n++
+                }
+            } catch (e: InterruptedException) {
+                Log.w("KekPek", "Поток числа Пи остановлен")
+            }
+        }
         colorThread = Thread {
             try {
                 while (true) {
@@ -56,29 +80,32 @@ class ThreadWorker(private val uiCallback: Callbacks) : Background {
         }
     }
 
-        override fun create() {
-            colorThread.start()
-            timeThread.start()
-        }
-
-        override fun destroy() {
-            colorThread.interrupt()
-            timeThread.interrupt()
-        }
-
-        override fun pause() {
-            isPaused = true
-        }
-
-        override fun play() {
-            isPaused = false
-        }
-
-        override fun reset() {
-            sleepTime = 0
-            timeMillis = 0
-            isPaused = false
-            uiCallback.onColorChanged(Color.WHITE)
-
-        }
+    override fun create() {
+        colorThread.start()
+        timeThread.start()
+        piThread.start()
     }
+
+    override fun destroy() {
+        colorThread.interrupt()
+        timeThread.interrupt()
+        piThread.interrupt()
+    }
+
+    override fun pause() {
+        isPaused = true
+    }
+
+    override fun play() {
+        isPaused = false
+    }
+
+    override fun reset() {
+        sleepTime = 0
+        timeMillis = 0
+        n = 1
+        isPaused = false
+        uiCallback.onColorChanged(Color.WHITE)
+
+    }
+}
